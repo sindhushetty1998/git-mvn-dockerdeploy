@@ -1,0 +1,26 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('git clone') {
+            steps {
+                git branch: 'master', url: 'https://github.com/sindhushetty1998/CICD-pipeline'
+            }
+        }
+        stage('maven build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('deploy to docker') {
+            steps {
+         sshPublisher(publishers: [sshPublisherDesc(configName: 'mvn-docker-project', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: '''docker stop sindhu;
+docker rm -f sindhu;
+docker rmi -f sindhushetty/tomcatproject;
+cd /opt/docker/; 
+docker build -t sindhushetty/tomcatproject .;
+docker run -d --name sindhu -p 8080:8080 sindhushetty/tomcatproject;''', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '//opt//docker', remoteDirectorySDF: false, removePrefix: 'webapp/target', sourceFiles: 'webapp/target/*.war')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])
+            }
+        }
+    }
+}
